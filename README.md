@@ -2,6 +2,14 @@
 
 一款 **離線、單機** 的 Android 記帳 App，使用 **Kotlin + Jetpack Compose + Material 3**。
 
+## 下載安裝
+
+前往 **[Releases 頁面](https://github.com/JT0o0/Android-offline-expence-app/releases/latest)** 下載最新的 `.apk`，用手機瀏覽器開啟該檔即可安裝。
+
+- 需求：Android 8.0（API 26）以上。
+- 第一次安裝時，若系統提示，請允許「安裝未知來源的應用程式」。
+- App 完全離線，不需要網路權限，資料只存在手機本機。
+
 ## 功能
 
 - **內建計算機**：輸入金額時可直接做 `+ − × ÷`，即時顯示運算結果。
@@ -44,6 +52,12 @@ $env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"
 ```
 
 `local.properties` 已指向本機 SDK；第一次建置會自動下載 Gradle 與相依套件。
+
+### 產生簽章 Release APK（發佈用）
+
+於 Android Studio：**Build → Generate Signed Bundle / APK → APK**，選擇（或建立）一組 keystore 完成簽章。輸出的 `.apk` 位於 `app/release/`。
+
+> ⚠️ keystore（`*.jks`）與相關密碼**請自行妥善備份、切勿上傳**，`.gitignore` 已將其排除。發佈新版時沿用同一組 keystore，手機才能直接覆蓋更新、不必先解除安裝。
 
 ## 疑難排解：`Unable to establish loopback connection`
 

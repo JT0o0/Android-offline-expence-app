@@ -9,3 +9,14 @@
 .cxx
 local.properties
 /app/build
+
+# Kotlin build cache
+.kotlin/
+
+# Signed APK output (distributed via GitHub Releases, not committed)
+/app/release/
+
+# Release signing — NEVER commit these
+keystore.properties
+*.jks
+*.keystore

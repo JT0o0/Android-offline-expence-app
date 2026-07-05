@@ -65,7 +65,6 @@ import com.toting.ledger.ui.components.colorpicker.ColorPickerDialog
 import com.toting.ledger.ui.navigation.LocalBottomBarPadding
 import com.toting.ledger.ui.theme.Ledger
 import com.toting.ledger.util.MoneyFormatter
-import java.math.BigDecimal
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
