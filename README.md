@@ -53,22 +53,6 @@ $env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"
 
 `local.properties` 已指向本機 SDK；第一次建置會自動下載 Gradle 與相依套件。
 
-### 產生簽章 Release APK（發佈用）
-
-於 Android Studio：**Build → Generate Signed Bundle / APK → APK**，選擇（或建立）一組 keystore 完成簽章。輸出的 `.apk` 位於 `app/release/`。
-
-> ⚠️ keystore（`*.jks`）與相關密碼**請自行妥善備份、切勿上傳**，`.gitignore` 已將其排除。發佈新版時沿用同一組 keystore，手機才能直接覆蓋更新、不必先解除安裝。
-
-## 疑難排解：`Unable to establish loopback connection`
-
-若建置時出現此錯誤，代表此環境的 **AF_UNIX（Unix domain socket）loopback 故障**（JDK 16+ 的 `Selector` 會用到它，且不會退回 TCP）。本機實測 TCP loopback 正常、AF_UNIX 失敗。可嘗試：
-
-- 確認是否為**安全防護軟體**攔截了本機 socket；暫時停用後再試。
-- 更新 / 修復 Windows（此機為 Windows 11 25H2, build 26200）。
-- 若僅在某些受限環境（如沙箱）發生，於一般使用者終端機 / Android Studio 直接建置通常正常。
-
-> 註：JDK 17、21 皆受影響（皆使用 AF_UNIX self-pipe），故換 JDK 版本無法解決；需從上述環境面處理。
-
 ## 專案結構
 
 ```
