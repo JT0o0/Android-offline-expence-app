@@ -73,16 +73,7 @@ class StatsViewModel @Inject constructor(
             }
             .sortedByDescending { it.amount }
 
-        val lengthOfMonth = ym.lengthOfMonth()
-        val byDay = txs.groupBy { DateUtils.fromEpochDay(it.dateEpochDay).dayOfMonth }
-        val dailies = (1..lengthOfMonth).map { day ->
-            val dayTxs = byDay[day].orEmpty()
-            DayBar(
-                day = day,
-                income = dayTxs.filter { it.type == TxType.INCOME }.sumOf { it.amountMinor },
-                expense = dayTxs.filter { it.type == TxType.EXPENSE }.sumOf { it.amountMinor },
-            )
-        }
+        val dailies = buildDailyStats(ym, txs)
 
         return StatsUiState(
             yearMonth = ym,
@@ -92,5 +83,22 @@ class StatsViewModel @Inject constructor(
             slices = slices,
             dailies = dailies,
         )
+    }
+}
+
+/**
+ * Dense per-day totals for [ym] — every day of the month is present (empty days are
+ * all-zero) — with a running income − expense balance folded in day order.
+ * Top-level and pure so it's unit-testable without Android.
+ */
+internal fun buildDailyStats(ym: YearMonth, txs: List<TransactionEntity>): List<DayBar> {
+    val byDay = txs.groupBy { DateUtils.fromEpochDay(it.dateEpochDay).dayOfMonth }
+    var running = 0L
+    return (1..ym.lengthOfMonth()).map { day ->
+        val dayTxs = byDay[day].orEmpty()
+        val income = dayTxs.filter { it.type == TxType.INCOME }.sumOf { it.amountMinor }
+        val expense = dayTxs.filter { it.type == TxType.EXPENSE }.sumOf { it.amountMinor }
+        running += income - expense
+        DayBar(day = day, income = income, expense = expense, cumulative = running)
     }
 }

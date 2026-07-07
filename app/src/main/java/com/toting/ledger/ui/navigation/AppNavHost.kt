@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -32,16 +31,17 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.toting.ledger.ui.accounts.AccountsScreen
 import com.toting.ledger.ui.components.AppBackground
+import com.toting.ledger.ui.components.BOTTOM_BAR_GLASS_FACTOR
 import com.toting.ledger.ui.components.LocalHazeState
+import com.toting.ledger.ui.components.glassStyle
 import com.toting.ledger.ui.entry.EntryScreen
 import com.toting.ledger.ui.home.HomeScreen
 import com.toting.ledger.ui.settings.SettingsScreen
 import com.toting.ledger.ui.settings.category.CategoryListScreen
 import com.toting.ledger.ui.stats.StatsScreen
+import com.toting.ledger.ui.theme.LocalGlassAlpha
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeEffect
-import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
-import dev.chrisbanes.haze.materials.HazeMaterials
 import kotlinx.coroutines.launch
 import kotlin.math.absoluteValue
 
@@ -106,7 +106,6 @@ fun AppNavHost(modifier: Modifier = Modifier) {
     }
 }
 
-@OptIn(ExperimentalHazeMaterialsApi::class)
 @Composable
 private fun MainTabs(
     pagerState: PagerState,
@@ -130,7 +129,9 @@ private fun MainTabs(
                     onSelect = { index -> scope.launch { pagerState.animateScrollToPage(index) } },
                     modifier = Modifier.hazeEffect(
                         state = hazeState,
-                        style = HazeMaterials.ultraThin(MaterialTheme.colorScheme.surface),
+                        style = glassStyle(
+                            alpha = LocalGlassAlpha.current * BOTTOM_BAR_GLASS_FACTOR,
+                        ),
                     ),
                 )
             },

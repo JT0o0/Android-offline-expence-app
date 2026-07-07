@@ -58,6 +58,8 @@ import com.toting.ledger.ui.navigation.LocalBottomBarPadding
 import com.toting.ledger.ui.theme.Ledger
 import com.toting.ledger.util.DateUtils
 import com.toting.ledger.util.MoneyFormatter
+import java.time.LocalDate
+import java.time.YearMonth
 import kotlin.math.roundToInt
 
 @Composable
@@ -170,16 +172,25 @@ fun StatsScreen(
                         Modifier.fillMaxWidth().padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
-                        TrendBars(
+                        TrendLines(
                             dailies = state.dailies,
                             incomeColor = Ledger.colors.income,
                             expenseColor = Ledger.colors.expense,
-                            modifier = Modifier.fillMaxWidth().height(140.dp),
+                            balanceColor = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.fillMaxWidth().height(160.dp),
                             progress = chartProgress.value,
+                            // Current month draws up to today; past months in full;
+                            // future months keep only the date axis.
+                            drawUpTo = when {
+                                state.yearMonth < YearMonth.now() -> state.dailies.size
+                                state.yearMonth == YearMonth.now() -> LocalDate.now().dayOfMonth
+                                else -> 0
+                            },
                         )
                         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                             LegendDot("收入", Ledger.colors.income)
                             LegendDot("支出", Ledger.colors.expense)
+                            LegendDot("餘額", MaterialTheme.colorScheme.primary)
                         }
                     }
                 }

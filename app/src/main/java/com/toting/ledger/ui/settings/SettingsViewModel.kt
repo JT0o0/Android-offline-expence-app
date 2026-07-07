@@ -47,6 +47,21 @@ class SettingsViewModel @Inject constructor(
 
     fun resetColors() = launchIo { themeRepository.resetColors() }
 
+    // onValueChangeFinished carries no value, so the last previewed value is kept here.
+    private var pendingGlassAlpha: Float? = null
+
+    /** Live in-memory preview while the slider drags — no disk writes. */
+    fun previewGlassAlpha(value: Float) {
+        pendingGlassAlpha = value
+        themeRepository.previewGlassAlpha(value)
+    }
+
+    /** Persists the last previewed glass opacity when the drag ends. */
+    fun commitGlassAlpha() = launchIo {
+        pendingGlassAlpha?.let { themeRepository.setGlassAlpha(it) }
+        pendingGlassAlpha = null
+    }
+
     fun setBackgroundImage(uri: Uri) =
         runReporting("設定背景") { themeRepository.setBackgroundImage(uri); "已套用背景圖片" }
 

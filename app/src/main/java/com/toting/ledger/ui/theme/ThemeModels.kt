@@ -2,6 +2,7 @@ package com.toting.ledger.ui.theme
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 
@@ -23,10 +24,21 @@ data class ThemeState(
     val incomeOverride: Int? = null,
     val expenseOverride: Int? = null,
     val backgroundImagePath: String? = null,
+    val glassAlpha: Float = DEFAULT_GLASS_ALPHA,
 )
 
 /** Absolute path of the user's custom background photo, provided by AppTheme. */
 val LocalBackgroundImagePath = staticCompositionLocalOf<String?> { null }
+
+/** Default glass tint alpha — matches HazeMaterials.thin's light tint, so the default look is unchanged. */
+const val DEFAULT_GLASS_ALPHA = 0.6f
+
+/**
+ * User-tuned glass opacity, provided by AppTheme. Deliberately NOT a static local:
+ * the value changes continuously while the settings slider is dragged, and fine-grained
+ * invalidation keeps recomposition limited to the actual readers.
+ */
+val LocalGlassAlpha = compositionLocalOf { DEFAULT_GLASS_ALPHA }
 
 /** Semantic colors Material 3 doesn't provide. Supplied via [LocalAppColors]. */
 data class AppColors(

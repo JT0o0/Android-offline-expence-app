@@ -11,11 +11,15 @@ data class CategorySlice(
     val fraction: Float,
 )
 
-/** Income/expense totals for a single day-of-month, for the trend chart. */
+/**
+ * Income/expense totals for a single day-of-month, for the trend chart.
+ * [cumulative] is the month's running balance (income − expense) through this day.
+ */
 data class DayBar(
     val day: Int,
     val income: Long,
     val expense: Long,
+    val cumulative: Long = 0,
 )
 
 data class StatsUiState(

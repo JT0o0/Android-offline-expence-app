@@ -40,7 +40,12 @@ fun AppTheme(
     }
     val preset = ThemePresets.byId(state.presetId)
     val base = if (dark) preset.dark else preset.light
-    val colorScheme = remember(state, dark) { applyOverrides(base, state) }
+    // Keyed on the color-relevant fields only — keying on the whole state would rebuild
+    // the ColorScheme (and recompose the entire MaterialTheme subtree) on every tick of
+    // the glass-opacity slider drag.
+    val colorScheme = remember(
+        state.presetId, state.primaryOverride, state.secondaryOverride, state.backgroundOverride, dark,
+    ) { applyOverrides(base, state) }
 
     val income = state.incomeOverride?.let { Color(it) } ?: if (dark) IncomeGreenDark else IncomeGreen
     val expense = state.expenseOverride?.let { Color(it) } ?: if (dark) ExpenseRedDark else ExpenseRed
@@ -48,6 +53,7 @@ fun AppTheme(
     CompositionLocalProvider(
         LocalAppColors provides AppColors(income = income, expense = expense),
         LocalBackgroundImagePath provides state.backgroundImagePath,
+        LocalGlassAlpha provides state.glassAlpha,
     ) {
         MaterialTheme(
             colorScheme = colorScheme,

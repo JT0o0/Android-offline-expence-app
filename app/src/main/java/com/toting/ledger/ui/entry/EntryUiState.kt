@@ -19,4 +19,8 @@ data class EntryUiState(
 ) {
     val canSave: Boolean
         get() = amountMinor > 0 && selectedCategoryId != null && selectedAccountId != null
+
+    /** 金額為 0 時底部顯示收支切換；金額 > 0 時變形為「完成」鈕。 */
+    val showTypeToggle: Boolean
+        get() = amountMinor <= 0L
 }
