@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.height
@@ -31,6 +32,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -43,6 +45,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -61,6 +64,7 @@ import com.toting.ledger.ui.theme.ThemePresets
 import com.toting.ledger.ui.theme.ThemeState
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -166,6 +170,25 @@ fun SettingsScreen(
                     { TextButton(onClick = viewModel::clearBackgroundImage) { Text("清除") } }
                 } else null,
             )
+
+            SettingLabel("玻璃透明度")
+            Row(
+                Modifier.padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Slider(
+                    value = theme.glassAlpha,
+                    onValueChange = viewModel::previewGlassAlpha,
+                    onValueChangeFinished = viewModel::commitGlassAlpha,
+                    valueRange = 0.2f..1f,
+                    modifier = Modifier.weight(1f),
+                )
+                Text(
+                    "${(theme.glassAlpha * 100).roundToInt()}%",
+                    modifier = Modifier.padding(start = 12.dp),
+                    style = MaterialTheme.typography.labelLarge,
+                )
+            }
 
             SectionHeader("管理")
             ListItem(

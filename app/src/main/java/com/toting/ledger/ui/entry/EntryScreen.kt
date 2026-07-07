@@ -1,27 +1,32 @@
 package com.toting.ledger.ui.entry
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.CalendarMonth
@@ -30,6 +35,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenu
@@ -99,20 +105,26 @@ fun EntryScreen(
                 .fillMaxSize()
                 .imePadding(),
         ) {
-            TypeToggle(type = state.type, onSelect = viewModel::setType)
-            AmountDisplay(state = state, onClear = viewModel::clear)
-            CategoryGrid(
-                categories = state.categories,
-                selectedId = state.selectedCategoryId,
-                onSelect = viewModel::selectCategory,
-                modifier = Modifier.weight(1f),
-            )
-            MetaSection(
-                state = state,
-                onAccount = viewModel::selectAccount,
-                onDate = viewModel::setDate,
-                onNote = viewModel::setNote,
-            )
+            // 上半部可捲動：大字體/大顯示比例把空間吃掉時，類別仍捲得到、點得到；
+            // 鍵盤與底部動作鈕固定釘在下方。
+            Column(
+                Modifier
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState()),
+            ) {
+                AmountDisplay(state = state, onClear = viewModel::clear)
+                CategoryGrid(
+                    categories = state.categories,
+                    selectedId = state.selectedCategoryId,
+                    onSelect = viewModel::selectCategory,
+                )
+                MetaSection(
+                    state = state,
+                    onAccount = viewModel::selectAccount,
+                    onDate = viewModel::setDate,
+                    onNote = viewModel::setNote,
+                )
+            }
             CalculatorKeypad(
                 onDigit = viewModel::inputDigit,
                 onDot = viewModel::inputDot,
@@ -120,28 +132,65 @@ fun EntryScreen(
                 onBackspace = viewModel::backspace,
                 onClearAll = viewModel::clear,
             )
-            Button(
-                onClick = { viewModel.save(onClose) },
-                enabled = state.canSave,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 6.dp)
-                    .height(50.dp),
-            ) {
-                Text("完成", style = MaterialTheme.typography.titleMedium)
-            }
+            BottomActionBar(
+                state = state,
+                onSelectType = viewModel::setType,
+                onSave = { viewModel.save(onClose) },
+            )
         }
     }
 }
 
+/**
+ * 底部動作列：金額為 0 時顯示「支出/收入」切換，輸入金額後變形為「完成」鈕
+ * （退格清到 0 就變回切換）。容器固定 50dp 高，變形時鍵盤不會跳動。
+ */
 @Composable
-private fun TypeToggle(type: TxType, onSelect: (TxType) -> Unit) {
-    Row(
-        Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        ToggleChip("支出", type == TxType.EXPENSE, Ledger.colors.expense, Modifier.weight(1f)) { onSelect(TxType.EXPENSE) }
-        ToggleChip("收入", type == TxType.INCOME, Ledger.colors.income, Modifier.weight(1f)) { onSelect(TxType.INCOME) }
+private fun BottomActionBar(
+    state: EntryUiState,
+    onSelectType: (TxType) -> Unit,
+    onSave: () -> Unit,
+) {
+    AnimatedContent(
+        targetState = state.showTypeToggle,
+        transitionSpec = {
+            (fadeIn(tween(180)) + scaleIn(initialScale = 0.92f, animationSpec = tween(180)))
+                .togetherWith(fadeOut(tween(120)) + scaleOut(targetScale = 0.92f, animationSpec = tween(120)))
+        },
+        label = "entryBottomAction",
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 6.dp)
+            .height(50.dp),
+    ) { showToggle ->
+        if (showToggle) {
+            Row(
+                Modifier.fillMaxSize(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                ToggleChip(
+                    "支出", state.type == TxType.EXPENSE, Ledger.colors.expense,
+                    Modifier.weight(1f).fillMaxHeight(),
+                ) { onSelectType(TxType.EXPENSE) }
+                ToggleChip(
+                    "收入", state.type == TxType.INCOME, Ledger.colors.income,
+                    Modifier.weight(1f).fillMaxHeight(),
+                ) { onSelectType(TxType.INCOME) }
+            }
+        } else {
+            val color = if (state.type == TxType.EXPENSE) Ledger.colors.expense else Ledger.colors.income
+            Button(
+                onClick = onSave,
+                enabled = state.canSave,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = color,
+                    contentColor = contentColorOn(color),
+                ),
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                Text("完成", style = MaterialTheme.typography.titleMedium)
+            }
+        }
     }
 }
 
@@ -160,7 +209,7 @@ private fun ToggleChip(text: String, selected: Boolean, color: Color, modifier: 
     val interactionSource = remember { MutableInteractionSource() }
     Surface(
         onClick = onClick,
-        modifier = modifier.height(42.dp).pressScale(interactionSource),
+        modifier = modifier.pressScale(interactionSource),
         shape = CircleShape,
         color = container,
         contentColor = content,
@@ -206,49 +255,65 @@ private fun CategoryGrid(
     onSelect: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(4),
-        modifier = modifier.fillMaxWidth(),
-        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
-    ) {
-        items(categories, key = { it.id }) { cat ->
-            val selected = cat.id == selectedId
-            val color = Color(cat.colorArgb)
-            val ringWidth by animateDpAsState(
-                targetValue = if (selected) 2.dp else 0.dp,
-                animationSpec = tween(180),
-                label = "categoryRingWidth",
-            )
-            val ringColor by animateColorAsState(
-                targetValue = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent,
-                animationSpec = tween(180),
-                label = "categoryRingColor",
-            )
-            val labelColor by animateColorAsState(
-                targetValue = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                animationSpec = tween(180),
-                label = "categoryLabelColor",
-            )
-            Column(
-                Modifier.padding(6.dp).clickable { onSelect(cat.id) },
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(56.dp)
-                        .border(ringWidth, ringColor, CircleShape),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    CategoryAvatar(color = color, icon = CategoryIcons.iconFor(cat.iconKey), size = 44.dp)
+    // 非-lazy 排版：類別頂多十餘個，且 Lazy 網格不能放進 verticalScroll 區域。
+    Column(modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp)) {
+        categories.chunked(CATEGORY_COLUMNS).forEach { row ->
+            Row(Modifier.fillMaxWidth()) {
+                row.forEach { cat ->
+                    CategoryCell(
+                        category = cat,
+                        selected = cat.id == selectedId,
+                        onSelect = onSelect,
+                        modifier = Modifier.weight(1f),
+                    )
                 }
-                Text(
-                    text = cat.name,
-                    style = MaterialTheme.typography.labelSmall,
-                    maxLines = 1,
-                    color = labelColor,
-                )
+                repeat(CATEGORY_COLUMNS - row.size) { Spacer(Modifier.weight(1f)) }
             }
         }
+    }
+}
+
+@Composable
+private fun CategoryCell(
+    category: CategoryEntity,
+    selected: Boolean,
+    onSelect: (Long) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val color = Color(category.colorArgb)
+    val ringWidth by animateDpAsState(
+        targetValue = if (selected) 2.dp else 0.dp,
+        animationSpec = tween(180),
+        label = "categoryRingWidth",
+    )
+    val ringColor by animateColorAsState(
+        targetValue = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent,
+        animationSpec = tween(180),
+        label = "categoryRingColor",
+    )
+    val labelColor by animateColorAsState(
+        targetValue = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+        animationSpec = tween(180),
+        label = "categoryLabelColor",
+    )
+    Column(
+        modifier.padding(6.dp).clickable { onSelect(category.id) },
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(56.dp)
+                .border(ringWidth, ringColor, CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            CategoryAvatar(color = color, icon = CategoryIcons.iconFor(category.iconKey), size = 44.dp)
+        }
+        Text(
+            text = category.name,
+            style = MaterialTheme.typography.labelSmall,
+            maxLines = 1,
+            color = labelColor,
+        )
     }
 }
 
@@ -331,3 +396,4 @@ private fun DateChip(date: LocalDate, onDate: (LocalDate) -> Unit) {
 }
 
 private const val MILLIS_PER_DAY = 86_400_000L
+private const val CATEGORY_COLUMNS = 4

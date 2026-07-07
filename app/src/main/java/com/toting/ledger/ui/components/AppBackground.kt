@@ -21,7 +21,9 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.layout.ContentScale
+import com.toting.ledger.ui.theme.DEFAULT_GLASS_ALPHA
 import com.toting.ledger.ui.theme.LocalBackgroundImagePath
+import com.toting.ledger.ui.theme.LocalGlassAlpha
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -58,11 +60,15 @@ fun AppBackground(
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop,
             )
-            // Scrim keeps text readable over any photo.
+            // Scrim keeps text readable over any photo. Scales with the glass-opacity
+            // setting, capped so the photo never fully disappears.
+            val scrimBase = if (isLight) 0.70f else 0.55f
+            val scrimAlpha = (scrimBase * LocalGlassAlpha.current / DEFAULT_GLASS_ALPHA)
+                .coerceIn(0f, 0.95f)
             Box(
                 Modifier
                     .fillMaxSize()
-                    .background(scheme.background.copy(alpha = if (isLight) 0.70f else 0.55f))
+                    .background(scheme.background.copy(alpha = scrimAlpha))
             )
         } else {
             Box(

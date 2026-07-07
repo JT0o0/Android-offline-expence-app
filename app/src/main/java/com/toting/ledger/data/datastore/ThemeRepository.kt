@@ -4,17 +4,20 @@ import android.content.Context
 import android.net.Uri
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.toting.ledger.ui.theme.DEFAULT_GLASS_ALPHA
 import com.toting.ledger.ui.theme.DarkMode
 import com.toting.ledger.ui.theme.ThemePresets
 import com.toting.ledger.ui.theme.ThemeState
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import java.io.File
 import javax.inject.Inject
@@ -29,7 +32,14 @@ class ThemeRepository @Inject constructor(
 ) {
     private val ds = context.themeDataStore
 
-    val themeState: Flow<ThemeState> = ds.data.map { p ->
+    /**
+     * Live slider preview: non-null while the user drags the glass-opacity slider.
+     * Keeps the whole app updating in real time with exactly one disk write per drag
+     * (committed via [setGlassAlpha] when the drag ends).
+     */
+    private val glassAlphaPreview = MutableStateFlow<Float?>(null)
+
+    val themeState: Flow<ThemeState> = combine(ds.data, glassAlphaPreview) { p, preview ->
         ThemeState(
             presetId = p[KEY_PRESET] ?: ThemePresets.DEFAULT_ID,
             darkMode = p[KEY_DARK]?.let { runCatching { DarkMode.valueOf(it) }.getOrNull() } ?: DarkMode.SYSTEM,
@@ -39,11 +49,21 @@ class ThemeRepository @Inject constructor(
             incomeOverride = p[KEY_INCOME],
             expenseOverride = p[KEY_EXPENSE],
             backgroundImagePath = p[KEY_BG_IMAGE],
+            glassAlpha = preview ?: p[KEY_GLASS_ALPHA] ?: DEFAULT_GLASS_ALPHA,
         )
     }
 
     suspend fun setPreset(id: String) = ds.edit { it[KEY_PRESET] = id }
     suspend fun setDarkMode(mode: DarkMode) = ds.edit { it[KEY_DARK] = mode.name }
+
+    /** Instant, in-memory glass-opacity preview while the slider is being dragged. */
+    fun previewGlassAlpha(value: Float) { glassAlphaPreview.value = value }
+
+    /** Persists the glass opacity; clears the preview only after the edit so the value never flickers back. */
+    suspend fun setGlassAlpha(value: Float) {
+        ds.edit { it[KEY_GLASS_ALPHA] = value }
+        glassAlphaPreview.value = null
+    }
 
     suspend fun setPrimaryOverride(color: Int?) = setOrRemove(KEY_PRIMARY, color)
     suspend fun setSecondaryOverride(color: Int?) = setOrRemove(KEY_SECONDARY, color)
@@ -93,5 +113,6 @@ class ThemeRepository @Inject constructor(
         val KEY_INCOME = intPreferencesKey("income")
         val KEY_EXPENSE = intPreferencesKey("expense")
         val KEY_BG_IMAGE = stringPreferencesKey("bg_image_path")
+        val KEY_GLASS_ALPHA = floatPreferencesKey("glass_alpha")
     }
 }
