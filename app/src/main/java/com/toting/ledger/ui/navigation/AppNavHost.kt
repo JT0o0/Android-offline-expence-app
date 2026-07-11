@@ -1,10 +1,10 @@
 package com.toting.ledger.ui.navigation
 
 import androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Box
@@ -69,7 +69,15 @@ fun AppNavHost(modifier: Modifier = Modifier) {
         startDestination = MAIN_ROUTE,
         modifier = modifier.fillMaxSize(),
     ) {
-        composable(MAIN_ROUTE) {
+        composable(
+            route = MAIN_ROUTE,
+            // Full-screen routes (entry / categories) slide in OVER the main screen: keep
+            // it fully opaque until the transition ends instead of the default fadeOut —
+            // two translucent layers would expose the window background as a flash.
+            exitTransition = { ExitTransition.KeepUntilTransitionsFinished },
+            // Coming back it's already sitting beneath the popped screen; no animation.
+            popEnterTransition = { EnterTransition.None },
+        ) {
             MainTabs(
                 pagerState = pagerState,
                 onAddClick = { navController.navigate(EntryRoute.create()) },
@@ -83,13 +91,13 @@ fun AppNavHost(modifier: Modifier = Modifier) {
             arguments = listOf(
                 navArgument(EntryRoute.ARG_TX_ID) { type = NavType.LongType; defaultValue = -1L },
             ),
+            // Pure slide, no fade: the screen is opaque and covers the held main screen
+            // like a bottom sheet.
             enterTransition = {
-                slideInVertically(tween(ANIM_MS, easing = FastOutSlowInEasing)) { it } +
-                    fadeIn(tween(ANIM_MS, easing = FastOutSlowInEasing))
+                slideInVertically(tween(ANIM_MS, easing = FastOutSlowInEasing)) { it }
             },
             popExitTransition = {
-                slideOutVertically(tween(ANIM_MS, easing = FastOutSlowInEasing)) { it } +
-                    fadeOut(tween(ANIM_MS, easing = FastOutSlowInEasing))
+                slideOutVertically(tween(ANIM_MS, easing = FastOutSlowInEasing)) { it }
             },
         ) { backStackEntry ->
             val txId = backStackEntry.arguments?.getLong(EntryRoute.ARG_TX_ID) ?: -1L

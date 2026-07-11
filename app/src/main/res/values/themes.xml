@@ -7,5 +7,8 @@
     <style name="Theme.Ledger" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
+        <!-- Matches LightBackground in Color.kt so the first frame (and anything a
+             transition might expose) is the theme color, never plain white. -->
+        <item name="android:windowBackground">#FFF9FAEF</item>
     </style>
 </resources>
