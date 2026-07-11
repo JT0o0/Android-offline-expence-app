@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark variant of the launch/window theme; see values/themes.xml. -->
+    <style name="Theme.Ledger" parent="android:Theme.Material.NoActionBar">
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <!-- Matches DarkBackground in Color.kt. -->
+        <item name="android:windowBackground">#FF12140E</item>
+    </style>
+</resources>

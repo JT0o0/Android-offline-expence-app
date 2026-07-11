@@ -1,15 +1,21 @@
 package com.toting.ledger.ui.theme
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 
 /**
@@ -50,6 +56,21 @@ fun AppTheme(
     val income = state.incomeOverride?.let { Color(it) } ?: if (dark) IncomeGreenDark else IncomeGreen
     val expense = state.expenseOverride?.let { Color(it) } ?: if (dark) ExpenseRedDark else ExpenseRed
 
+    // Status/navigation bar icon appearance must follow the APP theme, not the system
+    // one (enableEdgeToEdge's default): system-dark + app-light would leave white icons
+    // on a light background. Actual background luminance (not the dark flag) also keeps
+    // icons visible when the user overrides the background with a dark color.
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        val lightBackground = colorScheme.background.luminance() > 0.5f
+        SideEffect {
+            val window = view.context.findActivity()?.window ?: return@SideEffect
+            val controller = WindowCompat.getInsetsController(window, view)
+            controller.isAppearanceLightStatusBars = lightBackground
+            controller.isAppearanceLightNavigationBars = lightBackground
+        }
+    }
+
     CompositionLocalProvider(
         LocalAppColors provides AppColors(income = income, expense = expense),
         LocalBackgroundImagePath provides state.backgroundImagePath,
@@ -83,3 +104,9 @@ private fun applyOverrides(base: ColorScheme, state: ThemeState): ColorScheme {
 
 private fun onColorFor(c: Color): Color =
     if (c.luminance() > 0.5f) Color(0xFF1A1A1A) else Color.White
+
+private tailrec fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
+}

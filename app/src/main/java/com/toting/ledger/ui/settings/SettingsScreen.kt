@@ -218,7 +218,7 @@ fun SettingsScreen(
             )
 
             SectionHeader("關於")
-            ListItem(headlineContent = { Text("記帳本") }, supportingContent = { Text("版本 1.0") })
+            ListItem(headlineContent = { Text("記帳本") }, supportingContent = { Text("版本 1.2") })
 
             // Clears the translucent bottom bar the page scrolls behind.
             Spacer(Modifier.height(LocalBottomBarPadding.current))
